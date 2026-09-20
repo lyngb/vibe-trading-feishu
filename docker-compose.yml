@@ -1,0 +1,41 @@
+# Vibe-Trading 飞书 bot —— Coolify / docker compose 部署
+# 环境变量全部由 Coolify 注入（仓库里不放 .env、不放任何密钥）
+services:
+  vibe-trading:
+    build: .
+    image: vibe-trading-feishu:latest
+    container_name: vibe-trading
+    restart: unless-stopped
+    environment:
+      # ---- LLM ----
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:?需要在 Coolify 里配置 MINIMAX_API_KEY}
+      - MINIMAX_BASE_URL=${MINIMAX_BASE_URL:-https://api.minimaxi.com/v1}
+      - LANGCHAIN_PROVIDER=${LANGCHAIN_PROVIDER:-minimax}
+      - LANGCHAIN_MODEL_NAME=${LANGCHAIN_MODEL_NAME:-MiniMax-M2.7}
+      - LANGCHAIN_TEMPERATURE=${LANGCHAIN_TEMPERATURE:-0.0}
+      - TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-120}
+      - MAX_RETRIES=${MAX_RETRIES:-2}
+      # ---- 飞书 005 机器人 ----
+      - FEISHU_APP_ID=${FEISHU_APP_ID:?需要在 Coolify 里配置 FEISHU_APP_ID}
+      - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:?需要在 Coolify 里配置 FEISHU_APP_SECRET}
+      - FEISHU_DOMAIN=${FEISHU_DOMAIN:-feishu}
+      # ---- 运行时 ----
+      - VT_PORT=8000
+      - TZ=${TZ:-Asia/Shanghai}
+    # 长连接是出站，无需对外暴露端口；仅容器内声明
+    expose:
+      - "8000"
+    volumes:
+      # 配置 + 会话 + 配对数据（重建容器不丢）
+      - vibe-trading-home:/root/.vibe-trading
+      # 回测 run / sessions / swarm 产物（上游把目录写死在 site-packages，镜像里已软链到 /data）
+      - vibe-trading-runtime:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  vibe-trading-home:
+  vibe-trading-runtime:
