@@ -19,6 +19,8 @@ services:
       - FEISHU_APP_ID=${FEISHU_APP_ID:?需要在 Coolify 里配置 FEISHU_APP_ID}
       - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:?需要在 Coolify 里配置 FEISHU_APP_SECRET}
       - FEISHU_DOMAIN=${FEISHU_DOMAIN:-feishu}
+      # 免配对白名单（逗号分隔的 open_id，留空则走配对码流程）
+      - FEISHU_ALLOW_FROM=${FEISHU_ALLOW_FROM:-}
       # ---- 运行时 ----
       - VT_PORT=8000
       - TZ=${TZ:-Asia/Shanghai}
