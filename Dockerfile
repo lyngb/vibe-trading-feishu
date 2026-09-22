@@ -32,21 +32,9 @@ RUN chmod +x /entrypoint.sh
 # lark SDK 调 websockets.connect(url, proxy=None)，未设置心跳参数，沿用 websockets 默认的
 # ping_interval=20s / ping_timeout=20s。跨境链路稍有抖动、或本进程忙于算力任务时，
 # 20 秒内回不了 pong 就会以 1011 keepalive ping timeout 掉线。
-# 这里把超时放宽到 90 秒（只改连接参数，不动业务逻辑）。
-RUN python - <<'PY'
-import pathlib
-import site
-
-p = pathlib.Path(site.getsitepackages()[0]) / "lark_oapi" / "ws" / "client.py"
-src = p.read_text(encoding="utf-8")
-old = '        return {"proxy": None}'
-new = ('        return {"proxy": None, "ping_interval": 20, "ping_timeout": 90,\n'
-       '                "close_timeout": 10}')
-if old not in src:
-    raise SystemExit("patch anchor not found in lark_oapi/ws/client.py")
-p.write_text(src.replace(old, new, 1), encoding="utf-8")
-print("patched lark ws: ping_interval=20 ping_timeout=90")
-PY
+# 用独立脚本把超时放宽到 90 秒（只改连接参数，不动业务逻辑）。
+COPY patch_lark_ws.py /tmp/patch_lark_ws.py
+RUN python /tmp/patch_lark_ws.py && rm -f /tmp/patch_lark_ws.py
 
 VOLUME ["/root/.vibe-trading", "/data"]
 EXPOSE 8000
